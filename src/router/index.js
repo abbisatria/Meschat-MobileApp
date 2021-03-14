@@ -14,6 +14,8 @@ import {
   SetName,
   SetPhone,
   SetPassword,
+  ResetPassword,
+  Loading,
 } from '../screens';
 import BottomNavigator from '../components/BottomNavigator';
 import {View} from 'react-native';
@@ -35,9 +37,11 @@ const Router = () => {
   return (
     <View style={{flex: 1, backgroundColor: '#000000'}}>
       <Stack.Navigator screenOptions={{headerShown: false}}>
+        <Stack.Screen name="Loading" component={Loading} />
         <Stack.Screen name="GetStarted" component={GetStarted} />
         <Stack.Screen name="SignIn" component={SignIn} />
         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+        <Stack.Screen name="ResetPassword" component={ResetPassword} />
         <Stack.Screen name="SignUp" component={SignUp} />
         <Stack.Screen name="Verification" component={Verification} />
         <Stack.Screen name="MainApp" component={MainApp} />

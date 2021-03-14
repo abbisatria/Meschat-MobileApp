@@ -9,77 +9,114 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {Picker} from '@react-native-picker/picker';
+import {connect} from 'react-redux';
+import {getContact} from '../../redux/actions/contact';
+import {historyChat, sender} from '../../redux/actions/chat';
 
 import ContactItem from '../../components/ContactItem';
+import LoadingIndicator from '../../components/LoadingIndicator';
+
+import {showMessage} from '../../helpers/showMessage';
 
 import Add from '../../assets/icons/ic-add.svg';
-import SenderOne from '../../assets/images/sender-one.jpg';
-import SenderTwo from '../../assets/images/sender-two.jpg';
-import SenderThree from '../../assets/images/sender-three.jpg';
-import SenderFour from '../../assets/images/sender-four.jpg';
-import SenderFive from '../../assets/images/sender-five.jpg';
-import SenderSix from '../../assets/images/sender-six.jpg';
-import SenderSeven from '../../assets/images/sender-seven.jpg';
 
-export default class Contact extends Component {
+class Contact extends Component {
   state = {
-    chat: [
-      {
-        id: 1,
-        image: SenderOne,
-        sender: 'Tasya Salsaliantika',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 2,
-        image: SenderTwo,
-        sender: 'Ule',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 3,
-        image: SenderThree,
-        sender: 'Fahmi',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 4,
-        image: SenderFour,
-        sender: 'Dio',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 5,
-        image: SenderFive,
-        sender: 'Reza',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 6,
-        image: SenderSix,
-        sender: 'Dwi',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 7,
-        image: SenderSeven,
-        sender: 'Lathif',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 8,
-        image: SenderSix,
-        sender: 'Dwi',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 9,
-        image: SenderSeven,
-        sender: 'Lathif',
-        phone: '+62 899 7212 282',
-      },
-    ],
     sort: '',
+    order: 'ASC',
+    loading: false,
+    page: 1,
+    contact: [],
+  };
+  chatting = async (idSender, username, picture) => {
+    const {token} = this.props.auth;
+    await this.props.historyChat(token, idSender);
+    await this.props.sender(idSender);
+    this.props.navigation.navigate('Chatting', {idSender, username, picture});
+  };
+  async componentDidMount() {
+    await this.props.getContact(this.props.auth.token);
+    this.setState({contact: this.props.contact.results});
+  }
+  search = async (value) => {
+    this.setState({loading: true});
+    await this.props.getContact(this.props.auth.token, value);
+    if (this.props.contact.results > 0) {
+      this.setState({
+        message: '',
+        loading: false,
+        contact: this.props.contact.results,
+        page: 1,
+        sort: '',
+        order: 'ASC',
+      });
+    } else {
+      this.setState({
+        message: `${value} Not Found`,
+        loading: false,
+        contact: this.props.contact.results,
+        page: 1,
+        sort: '',
+        order: 'ASC',
+      });
+    }
+  };
+  sort = async (value) => {
+    this.setState({sort: value, loading: true});
+    const {order} = this.state;
+    await this.props.getContact(
+      this.props.auth.token,
+      null,
+      null,
+      null,
+      value,
+      order,
+    );
+    this.setState({
+      loading: false,
+      contact: this.props.contact.results,
+      page: 1,
+    });
+  };
+  sortBy = async () => {
+    const {sort, order} = this.state;
+    if (sort !== '') {
+      if (order === 'ASC') {
+        this.setState({loading: true});
+        await this.props.getContact(
+          this.props.auth.token,
+          null,
+          null,
+          null,
+          sort,
+          'DESC',
+        );
+        this.setState({
+          loading: false,
+          contact: this.props.contact.results,
+          order: 'DESC',
+          page: 1,
+        });
+      } else {
+        this.setState({loading: true});
+        await this.props.getContact(
+          this.props.auth.token,
+          null,
+          null,
+          null,
+          sort,
+          'ASC',
+        );
+        this.setState({
+          loading: false,
+          contact: this.props.contact.results,
+          order: 'ASC',
+          page: 1,
+        });
+      }
+    } else {
+      showMessage('Please select the sort first');
+    }
   };
   render() {
     return (
@@ -96,41 +133,61 @@ export default class Contact extends Component {
             <Icon name="search" size={18} color="#8b8b8b" />
             <TextInput
               style={styles.textInput}
-              placeholder="Search"
+              placeholder="Search Contact"
               placeholderTextColor="#8b8b8b"
+              onChangeText={(value) => this.search(value)}
             />
           </View>
         </View>
         <View style={styles.rowSort}>
           <Picker
             selectedValue={this.state.sort}
-            onValueChange={(sort) => this.setState({sort})}
+            onValueChange={(itemValue) => this.sort(itemValue)}
             style={styles.picker}
             dropdownIconColor="white">
             <Picker.Item label="Sort" />
-            <Picker.Item label="Last Chat" value="Last Chat" />
-            <Picker.Item label="Name" value="name" />
+            <Picker.Item label="Name" value="username" />
           </Picker>
+          <TouchableOpacity onPress={this.sortBy}>
+            {this.state.order === 'ASC' ? (
+              <Icon size={15} name="arrow-up" color="#ffffff" />
+            ) : (
+              <Icon size={15} name="arrow-down" color="#ffffff" />
+            )}
+          </TouchableOpacity>
         </View>
-        <FlatList
-          showsVerticalScrollIndicator={false}
-          data={this.state.chat}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              onPress={() => this.props.navigation.navigate('Chatting')}>
-              <ContactItem
-                image={item.image}
-                name={item.sender}
-                phone={item.phone}
-              />
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => String(item.id)}
-        />
+        {this.state.contact ? (
+          <FlatList
+            showsVerticalScrollIndicator={false}
+            data={this.state.contact}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                onPress={() => {
+                  this.chatting(item.id, item.username, item.picture);
+                }}>
+                <ContactItem data={item} />
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => String(item.id)}
+          />
+        ) : (
+          <Text style={styles.text}>{this.state.message}</Text>
+        )}
+        {this.state.loading && <LoadingIndicator />}
       </View>
     );
   }
 }
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+  chat: state.chat,
+  contact: state.contact,
+});
+
+const mapDispatchToProps = {getContact, historyChat, sender};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Contact);
 
 const styles = StyleSheet.create({
   container: {
@@ -166,8 +223,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   textInput: {
-    fontSize: 17,
-    fontFamily: 'Poppins-Regular',
+    fontSize: 16,
     color: '#8b8b8b',
     marginLeft: 6,
   },

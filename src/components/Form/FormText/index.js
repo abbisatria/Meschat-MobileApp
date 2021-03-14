@@ -1,7 +1,13 @@
 import React from 'react';
 import {StyleSheet, Text, View, TextInput} from 'react-native';
 
-export default function FormText({label, placeholder, onChange}) {
+export default function FormText({
+  label,
+  placeholder,
+  onChange,
+  onBlur,
+  value,
+}) {
   return (
     <View>
       <Text style={styles.label}>{label}</Text>
@@ -11,6 +17,8 @@ export default function FormText({label, placeholder, onChange}) {
           placeholder={placeholder}
           placeholderTextColor="#474747"
           onChangeText={onChange}
+          onBlur={onBlur}
+          defaultValue={value}
         />
       </View>
     </View>
@@ -34,8 +42,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   textInput: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
+    flex: 1,
   },
 });

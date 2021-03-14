@@ -1,20 +1,35 @@
-import React from 'react';
+import React, {Component} from 'react';
 import {StyleSheet, Text, View, Image} from 'react-native';
+import {REACT_APP_API_URL as API_URL} from '@env';
+import PhotoProfile from '../../assets/images/profile.jpg';
 
-export default function ContactItem({image, name, phone}) {
-  return (
-    <View style={styles.column}>
-      <View style={styles.chat}>
-        <Image source={image} style={styles.image} />
-        <View style={styles.rowChat}>
-          <View style={styles.rowSender}>
-            <Text style={styles.textSender}>{name}</Text>
+export default class ContactItem extends Component {
+  render() {
+    return (
+      <View style={styles.column}>
+        <View style={styles.chat}>
+          {this.props.data.picture && this.props.data.picture !== 'null' ? (
+            <Image
+              source={{
+                uri: `${API_URL}upload/profile/${this.props.data.picture}`,
+              }}
+              style={styles.image}
+            />
+          ) : (
+            <Image source={PhotoProfile} style={styles.image} />
+          )}
+          <View style={styles.rowChat}>
+            <View style={styles.rowSender}>
+              <Text style={styles.textSender}>{this.props.data.username}</Text>
+            </View>
+            <Text style={styles.textChat}>
+              +62 {this.props.data.phoneNumber}
+            </Text>
           </View>
-          <Text style={styles.textChat}>{phone}</Text>
         </View>
       </View>
-    </View>
-  );
+    );
+  }
 }
 
 const styles = StyleSheet.create({

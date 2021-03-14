@@ -1,4 +1,3 @@
-import SplashScreen from './SplashScreen';
 import GetStarted from './GetStarted';
 import SignIn from './SignIn';
 import SignUp from './SignUp';
@@ -12,9 +11,10 @@ import Chatting from './Chatting';
 import SetName from './SetName';
 import SetPhone from './SetPhone';
 import SetPassword from './SetPassword';
+import Loading from './Loading';
+import Root from './Root';
 
 export {
-  SplashScreen,
   GetStarted,
   SignIn,
   SignUp,
@@ -28,4 +28,6 @@ export {
   SetName,
   SetPhone,
   SetPassword,
+  Loading,
+  Root,
 };

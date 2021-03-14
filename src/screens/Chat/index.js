@@ -10,6 +10,11 @@ import {
   Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {connect} from 'react-redux';
+import {listHistoryChat, historyChat, sender} from '../../redux/actions/chat';
+import {getContact} from '../../redux/actions/contact';
+import {REACT_APP_API_URL as API_URL} from '@env';
+import moment from 'moment';
 
 import ContactItem from '../../components/ContactItem';
 
@@ -21,8 +26,9 @@ import SenderFour from '../../assets/images/sender-four.jpg';
 import SenderFive from '../../assets/images/sender-five.jpg';
 import SenderSix from '../../assets/images/sender-six.jpg';
 import SenderSeven from '../../assets/images/sender-seven.jpg';
+import PhotoProfile from '../../assets/images/profile.jpg';
 
-export default class Chat extends Component {
+class Chat extends Component {
   state = {
     chat: [
       {
@@ -139,11 +145,23 @@ export default class Chat extends Component {
     ],
     modalVisible: false,
   };
-  setModalVisible = (visible) => {
+  setModalVisible = async (visible) => {
+    await this.props.getContact(this.props.auth.token);
     this.setState({modalVisible: visible});
+  };
+  async componentDidMount() {
+    await this.props.listHistoryChat(this.props.auth.token);
+  }
+  chatting = async (idSender, username, picture) => {
+    const {token} = this.props.auth;
+    await this.props.historyChat(token, idSender);
+    await this.props.sender(idSender);
+    this.props.navigation.navigate('Chatting', {idSender, username, picture});
   };
   render() {
     const {modalVisible} = this.state;
+    const {auth} = this.props;
+    const date = new Date();
     return (
       <View style={styles.container}>
         <View style={styles.row}>
@@ -160,50 +178,92 @@ export default class Chat extends Component {
             <Icon name="search" size={18} color="#8b8b8b" />
             <TextInput
               style={styles.textInput}
-              placeholder="Search for messages or users"
+              placeholder="Search for messages"
               placeholderTextColor="#8b8b8b"
             />
           </View>
         </View>
-        <FlatList
-          showsVerticalScrollIndicator={false}
-          data={this.state.chat}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              onPress={() => this.props.navigation.navigate('Chatting')}>
-              <View style={styles.column}>
-                <View style={styles.chat}>
-                  <Image source={item.image} style={styles.image} />
-                  <View style={styles.rowChat}>
-                    <View style={styles.rowSender}>
-                      <Text style={styles.textSender}>{item.sender}</Text>
-                      <Text style={styles.timeSender}>{item.time}</Text>
+        {this.props.chat.listHistoryChat.length > 0 && this.props.auth.token ? (
+          <FlatList
+            showsVerticalScrollIndicator={false}
+            data={this.props.chat.listHistoryChat}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                onPress={() =>
+                  this.chatting(
+                    item.idSender,
+                    auth.user.phoneNumber === item.senderPhoneNumber
+                      ? item.receiverUsername
+                      : item.senderUsername,
+                    auth.user.phoneNumber === item.senderPhoneNumber
+                      ? item.receiverPicture
+                      : item.senderPicture,
+                  )
+                }>
+                <View style={styles.column}>
+                  <View style={styles.chat}>
+                    {auth.user.phoneNumber === item.senderPhoneNumber ? (
+                      item.receiverPicture &&
+                      item.receiverPicture !== 'null' ? (
+                        <Image
+                          source={{
+                            uri: `${API_URL}upload/profile/${item.receiverPicture}`,
+                          }}
+                          style={styles.image}
+                        />
+                      ) : (
+                        <Image source={PhotoProfile} style={styles.image} />
+                      )
+                    ) : item.senderPicture && item.senderPicture !== 'null' ? (
+                      <Image
+                        source={{
+                          uri: `${API_URL}upload/profile/${item.senderPicture}`,
+                        }}
+                        style={styles.image}
+                      />
+                    ) : (
+                      <Image source={PhotoProfile} style={styles.image} />
+                    )}
+                    <View style={styles.rowChat}>
+                      <View style={styles.rowSender}>
+                        <Text style={styles.textSender}>
+                          {auth.user.phoneNumber === item.senderPhoneNumber
+                            ? item.receiverUsername
+                            : item.senderUsername}
+                        </Text>
+                        <Text style={styles.timeSender}>
+                          {moment(item.createdAt).format('D') < date.getDate()
+                            ? moment(item.createdAt).format(
+                                'DD MMMM YYYY, hh:mm a',
+                              )
+                            : moment(item.createdAt).format('hh:mm a')}
+                        </Text>
+                      </View>
+                      <Text style={styles.textChat}>{item.message}</Text>
                     </View>
-                    <Text style={styles.textChat}>{item.message}</Text>
                   </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => String(item.id)}
-        />
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => String(item.id)}
+          />
+        ) : null}
         <Modal
           animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => {
-            this.setModalVisible(!modalVisible);
+            this.setState({modalVisible: false});
           }}>
           <View style={styles.container}>
-            <View style={styles.row}>
+            <View style={styles.rowModal}>
               <TouchableOpacity
                 onPress={() => {
-                  this.setModalVisible(!modalVisible);
+                  this.setState({modalVisible: false});
                 }}>
                 <Text style={styles.text}>Cancel</Text>
               </TouchableOpacity>
-              <Text style={styles.text}>New Message</Text>
-              <View />
+              <Text style={[styles.text, styles.gap]}>New Message</Text>
             </View>
             <View style={styles.backgroundInput}>
               <View style={styles.input}>
@@ -215,30 +275,38 @@ export default class Chat extends Component {
                 />
               </View>
             </View>
-            <FlatList
-              showsVerticalScrollIndicator={false}
-              data={this.state.contact}
-              renderItem={({item}) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    this.setModalVisible(!modalVisible);
-                    this.props.navigation.navigate('Chatting');
-                  }}>
-                  <ContactItem
-                    image={item.image}
-                    name={item.sender}
-                    phone={item.phone}
-                  />
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => String(item.id)}
-            />
+            {this.props.contact.results ? (
+              <FlatList
+                showsVerticalScrollIndicator={false}
+                data={this.props.contact.results}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      this.setModalVisible(!modalVisible);
+                      this.chatting(item.id, item.username, item.picture);
+                    }}>
+                    <ContactItem data={item} />
+                  </TouchableOpacity>
+                )}
+                keyExtractor={(item) => String(item.id)}
+              />
+            ) : null}
           </View>
         </Modal>
       </View>
     );
   }
 }
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+  chat: state.chat,
+  contact: state.contact,
+});
+
+const mapDispatchToProps = {listHistoryChat, historyChat, sender, getContact};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Chat);
 
 const styles = StyleSheet.create({
   container: {
@@ -274,8 +342,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   textInput: {
-    fontSize: 17,
-    fontFamily: 'Poppins-Regular',
+    fontSize: 16,
     color: '#8b8b8b',
     marginLeft: 6,
   },
@@ -318,5 +385,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
     color: '#979799',
+  },
+  rowModal: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  gap: {
+    marginLeft: 50,
   },
 });

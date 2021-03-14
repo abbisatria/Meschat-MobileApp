@@ -28,6 +28,8 @@ export default class FormPassword extends Component {
             placeholderTextColor="#474747"
             secureTextEntry={isPasswordShown ? false : true}
             onChangeText={this.props.onChange}
+            defaultValue={this.props.value}
+            onBlur={this.props.onBlur}
           />
           <TouchableOpacity onPress={this.togglePasswordVisiblity}>
             <Icon
@@ -59,7 +61,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   textInput: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
   },

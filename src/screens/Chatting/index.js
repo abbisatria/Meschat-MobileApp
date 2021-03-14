@@ -6,15 +6,37 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
+  FlatList,
 } from 'react-native';
 import ChatItem from '../../components/ChatItem';
+import {connect} from 'react-redux';
+import {sendChat, historyChat, listHistoryChat} from '../../redux/actions/chat';
+import {REACT_APP_API_URL as API_URL} from '@env';
+import moment from 'moment';
+import io from '../../helpers/socket';
 
-import SenderOne from '../../assets/images/sender-one.jpg';
 import Arrow from '../../assets/icons/Arrow.svg';
 import Send from '../../assets/icons/ic-send.svg';
+import SendActive from '../../assets/icons/ic-send-active.svg';
+import PhotoProfile from '../../assets/images/profile.jpg';
 
-export default class Chatting extends Component {
+class Chatting extends Component {
+  state = {
+    sendMessage: '',
+  };
+  chat = async () => {
+    const {token} = this.props.auth;
+    await this.props.sendChat(
+      token,
+      this.props.route.params.idSender,
+      this.state.sendMessage,
+    );
+    this.setState({sendMessage: ''});
+    await this.props.historyChat(token, this.props.route.params.idSender);
+    await this.props.listHistoryChat(token);
+  };
   render() {
+    const date = new Date();
     return (
       <View style={styles.container}>
         <View style={styles.row}>
@@ -24,19 +46,39 @@ export default class Chatting extends Component {
               <Text style={styles.textBack}>Back</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.text}>Tasya Salsaliantika</Text>
-          <Image source={SenderOne} style={styles.image} />
+          <Text style={styles.text}>{this.props.route.params.username}</Text>
+          {this.props.route.params.picture &&
+          this.props.route.params.picture !== 'null' ? (
+            <Image
+              source={{
+                uri: `${API_URL}upload/profile/${this.props.route.params.picture}`,
+              }}
+              style={styles.image}
+            />
+          ) : (
+            <Image source={PhotoProfile} style={styles.image} />
+          )}
         </View>
         <View style={styles.contentChat}>
-          <ChatItem isMe message="How are u?" dateTime="14:00 PM" />
-          <ChatItem message="Im Good, and you?" dateTime="14:10 PM" />
-          <ChatItem
-            isMe
-            message="Where do you come from?"
-            dateTime="14:20 PM"
-          />
-          <ChatItem message="Im from Indonesia, and you?" dateTime="14:30 PM" />
-          <ChatItem isMe message="I live in Indonesia" dateTime="14:40 PM" />
+          {this.props.chat.historyChat.length > 0 ? (
+            <FlatList
+              showsVerticalScrollIndicator={false}
+              data={this.props.chat.historyChat}
+              inverted={true}
+              renderItem={({item}) => (
+                <ChatItem
+                  isMe={item.idSender === this.props.auth.user.id}
+                  message={item.message}
+                  dateTime={
+                    moment(item.createdAt).format('D') < date.getDate()
+                      ? moment(item.createdAt).format('DD MMMM YYYY, hh:mm a')
+                      : moment(item.createdAt).format('hh:mm a')
+                  }
+                />
+              )}
+              keyExtractor={(item) => String(item.id)}
+            />
+          ) : null}
         </View>
         <View style={styles.rowInput}>
           <View style={styles.input}>
@@ -44,16 +86,30 @@ export default class Chatting extends Component {
               placeholder="Message"
               placeholderTextColor="#828284"
               style={styles.textInput}
+              onChangeText={(sendMessage) => this.setState({sendMessage})}
+              defaultValue={this.state.sendMessage}
             />
           </View>
-          <TouchableOpacity style={styles.button}>
-            <Send />
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => this.chat()}
+            disabled={this.state.sendMessage === ''}>
+            {this.state.sendMessage !== '' ? <SendActive /> : <Send />}
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 }
+
+const mapStateToProps = (state) => ({
+  auth: state.auth,
+  chat: state.chat,
+});
+
+const mapDispatchToProps = {sendChat, historyChat, listHistoryChat};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Chatting);
 
 const styles = StyleSheet.create({
   container: {

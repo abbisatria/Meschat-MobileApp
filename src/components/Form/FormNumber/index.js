@@ -1,7 +1,13 @@
 import React from 'react';
 import {StyleSheet, Text, TextInput, View} from 'react-native';
 
-export default function FormNumber({label, placeholder, onChange}) {
+export default function FormNumber({
+  label,
+  placeholder,
+  onChange,
+  onBlur,
+  value,
+}) {
   return (
     <View>
       <Text style={styles.label}>{label}</Text>
@@ -13,6 +19,8 @@ export default function FormNumber({label, placeholder, onChange}) {
           placeholderTextColor="#474747"
           onChangeText={onChange}
           keyboardType="phone-pad"
+          onBlur={onBlur}
+          defaultValue={value}
         />
       </View>
     </View>
@@ -35,7 +43,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   phone: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
     borderRightColor: '#ffffff',
@@ -44,8 +52,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   input: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
+    flex: 1,
   },
 });
