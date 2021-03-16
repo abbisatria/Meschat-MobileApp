@@ -9,7 +9,7 @@ export const getContact = (token, search, page, limit, sort, order) => {
       });
       const response = await http(token).get(
         `contact?search=${search ? search : ''}&limit=${
-          limit ? limit : 8
+          limit ? limit : 7
         }&page=${page ? page : 1}&sort=${sort ? sort : 'id'}&order=${
           order ? order : 'ASC'
         }`,

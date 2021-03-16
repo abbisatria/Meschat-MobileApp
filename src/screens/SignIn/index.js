@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
     textAlign: 'center',
-    marginTop: 23,
-    marginBottom: 72,
+    marginTop: 20,
+    marginBottom: 30,
   },
   gap: {
     height: 15,

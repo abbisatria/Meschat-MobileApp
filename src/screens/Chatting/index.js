@@ -67,7 +67,7 @@ class Chatting extends Component {
               inverted={true}
               renderItem={({item}) => (
                 <ChatItem
-                  isMe={item.idSender === this.props.auth.user.id}
+                  isMe={item.idSender === Number(this.props.auth.user.id)}
                   message={item.message}
                   dateTime={
                     moment(item.createdAt).format('D') < date.getDate()

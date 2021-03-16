@@ -1,5 +1,6 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import IcRead from '../../assets/icons/ic-read.svg';
 
 export default function isMe({message, dateTime}) {
   return (
@@ -7,7 +8,10 @@ export default function isMe({message, dateTime}) {
       <View style={styles.chatContent}>
         <Text style={styles.textChat}>{message}</Text>
       </View>
-      <Text style={styles.date}>{dateTime}</Text>
+      <View style={styles.row}>
+        <Text style={styles.date}>{dateTime}</Text>
+        <IcRead />
+      </View>
     </View>
   );
 }
@@ -31,9 +35,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
   },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   date: {
     fontSize: 12,
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
+    marginRight: 5,
   },
 });

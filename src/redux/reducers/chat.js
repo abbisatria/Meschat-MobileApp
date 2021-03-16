@@ -1,6 +1,8 @@
 const initialState = {
   listHistoryChat: [],
   historyChat: [],
+  pageInfoListHistoryChat: null,
+  pageInfoHistoryChat: null,
   sender: '',
   message: '',
   errorMsg: '',
@@ -12,12 +14,23 @@ const chatReducer = (state = initialState, action) => {
       return {
         ...state,
         listHistoryChat: action.payload,
+        pageInfoListHistoryChat: action.pageInfo,
+      };
+    }
+    case 'PAGING_LIST_HISTORY_CHAT': {
+      const oldData = state.listHistoryChat;
+      const newData = [...oldData, ...action.payload];
+      return {
+        ...state,
+        listHistoryChat: newData,
+        pageInfoListHistoryChat: action.pageInfo,
       };
     }
     case 'HISTORY_CHAT': {
       return {
         ...state,
         historyChat: action.payload,
+        pageInfoHistoryChat: action.pageInfo,
       };
     }
     case 'SEND_CHAT': {

@@ -27,6 +27,8 @@ class Contact extends Component {
     loading: false,
     page: 1,
     contact: [],
+    listRefresh: false,
+    searcContact: '',
   };
   chatting = async (idSender, username, picture) => {
     const {token} = this.props.auth;
@@ -39,9 +41,9 @@ class Contact extends Component {
     this.setState({contact: this.props.contact.results});
   }
   search = async (value) => {
-    this.setState({loading: true});
+    this.setState({loading: true, searcContact: value});
     await this.props.getContact(this.props.auth.token, value);
-    if (this.props.contact.results > 0) {
+    if (this.props.contact.results.length > 0) {
       this.setState({
         message: '',
         loading: false,
@@ -118,6 +120,44 @@ class Contact extends Component {
       showMessage('Please select the sort first');
     }
   };
+  refresh = async () => {
+    this.setState({loading: true});
+    await this.props.getContact(this.props.auth.token);
+    if (this.props.contact.results.length > 0) {
+      this.setState({
+        contact: this.props.contact.results,
+        loading: false,
+        message: '',
+        page: 1,
+        sort: '',
+        order: 'ASC',
+      });
+    } else {
+      this.setState({
+        message: 'Contact Not Found',
+        loading: false,
+        page: 1,
+        sort: '',
+        order: 'ASC',
+      });
+    }
+  };
+  next = async () => {
+    if (this.state.page < this.props.contact.pageInfo.totalPage) {
+      const {contact: oldContact, page, sort, order, searcContact} = this.state;
+      await this.props.getContact(
+        this.props.auth.token,
+        searcContact,
+        page + 1,
+        null,
+        sort,
+        order,
+      );
+      const nowContact = this.props.contact.results;
+      const newData = [...oldContact, ...nowContact];
+      this.setState({contact: newData, page: page + 1});
+    }
+  };
   render() {
     return (
       <View style={styles.container}>
@@ -156,7 +196,7 @@ class Contact extends Component {
             )}
           </TouchableOpacity>
         </View>
-        {this.state.contact ? (
+        {this.state.contact.length > 0 ? (
           <FlatList
             showsVerticalScrollIndicator={false}
             data={this.state.contact}
@@ -169,9 +209,13 @@ class Contact extends Component {
               </TouchableOpacity>
             )}
             keyExtractor={(item) => String(item.id)}
+            refreshing={this.state.listRefresh}
+            onRefresh={this.refresh}
+            onEndReached={this.next}
+            onEndReachedThreshold={0.5}
           />
         ) : (
-          <Text style={styles.text}>{this.state.message}</Text>
+          <Text style={styles.textMessage}>{this.state.message}</Text>
         )}
         {this.state.loading && <LoadingIndicator />}
       </View>
@@ -206,6 +250,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
+  },
+  textMessage: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginTop: 5,
   },
   backgroundInput: {
     backgroundColor: '#1c1c1c',

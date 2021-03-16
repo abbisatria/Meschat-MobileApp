@@ -31,7 +31,7 @@ export default class SignUp extends Component {
     params.append('phoneNumber', phoneNumber);
     try {
       const response = await http().post('auth/check-user', params);
-      const code = '1234';
+      const code = Math.random().toString().slice(-4);
       if (response.data.success === true) {
         this.setState({loading: false});
         this.props.navigation.navigate('Verification', {
@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
     textAlign: 'center',
-    marginTop: 23,
-    marginBottom: 72,
+    marginTop: 20,
+    marginBottom: 30,
   },
   gap: {
     height: 15,

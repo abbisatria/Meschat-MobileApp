@@ -10,7 +10,7 @@ class Loading extends Component {
       } else {
         this.props.navigation.replace('GetStarted');
       }
-    }, 100);
+    }, 2000);
   }
   render() {
     return (

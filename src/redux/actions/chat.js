@@ -1,16 +1,59 @@
 import http from '../../helpers/http';
 
-export const listHistoryChat = (token) => {
+export const listHistoryChat = (token, search, page, limit, sort, order) => {
   return async (dispatch) => {
     try {
       dispatch({
         type: 'SET_CHAT_MESSAGE',
         payload: '',
       });
-      const response = await http(token).get('chat/list-history');
+      const response = await http(token).get(
+        `chat/list-history?search=${search ? search : ''}&limit=${
+          limit ? limit : 8
+        }&page=${page ? page : 1}&sort=${sort ? sort : 'id'}&order=${
+          order ? order : 'DESC'
+        }`,
+      );
       dispatch({
         type: 'LIST_HISTORY_CHAT',
         payload: response.data.results,
+        pageInfo: response.data.pageInfo,
+      });
+    } catch (err) {
+      const {message} = err.response.data;
+      dispatch({
+        type: 'SET_CHAT_MESSAGE',
+        payload: message,
+      });
+    }
+  };
+};
+
+export const pagingListHistoryChat = (
+  token,
+  search,
+  page,
+  limit,
+  sort,
+  order,
+) => {
+  return async (dispatch) => {
+    try {
+      dispatch({
+        type: 'SET_CHAT_MESSAGE',
+        payload: '',
+      });
+      const response = await http(token).get(
+        `chat/list-history?search=${search ? search : ''}&limit=${
+          limit ? limit : 8
+        }&page=${page ? page : 1}&sort=${sort ? sort : 'id'}&order=${
+          order ? order : 'DESC'
+        }`,
+      );
+      dispatch({
+        type: 'PAGING_LIST_HISTORY_CHAT',
+        payload: response.data.results,
+        pageInfo: response.data.pageInfo,
       });
     } catch (err) {
       const {message} = err.response.data;
@@ -35,6 +78,7 @@ export const historyChat = (token, idReceiver) => {
       dispatch({
         type: 'HISTORY_CHAT',
         payload: response.data.results,
+        pageInfo: response.data.pageInfo,
       });
     } catch (err) {
       const {message} = err.response.data;

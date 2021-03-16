@@ -11,143 +11,36 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {connect} from 'react-redux';
-import {listHistoryChat, historyChat, sender} from '../../redux/actions/chat';
+import {
+  listHistoryChat,
+  historyChat,
+  sender,
+  pagingListHistoryChat,
+} from '../../redux/actions/chat';
 import {getContact} from '../../redux/actions/contact';
 import {REACT_APP_API_URL as API_URL} from '@env';
 import moment from 'moment';
 
 import ContactItem from '../../components/ContactItem';
+import LoadingIndicator from '../../components/LoadingIndicator';
 
 import Message from '../../assets/icons/ic-create-msg.svg';
-import SenderOne from '../../assets/images/sender-one.jpg';
-import SenderTwo from '../../assets/images/sender-two.jpg';
-import SenderThree from '../../assets/images/sender-three.jpg';
-import SenderFour from '../../assets/images/sender-four.jpg';
-import SenderFive from '../../assets/images/sender-five.jpg';
-import SenderSix from '../../assets/images/sender-six.jpg';
-import SenderSeven from '../../assets/images/sender-seven.jpg';
 import PhotoProfile from '../../assets/images/profile.jpg';
+import IcRead from '../../assets/icons/ic-read.svg';
 
 class Chat extends Component {
   state = {
-    chat: [
-      {
-        id: 1,
-        image: SenderOne,
-        sender: 'Tasya Salsaliantika',
-        time: '21:00',
-        message: 'Good night dear, sweet dreams',
-      },
-      {
-        id: 2,
-        image: SenderTwo,
-        sender: 'Ule',
-        time: '20:00',
-        message: 'Coffee bro',
-      },
-      {
-        id: 3,
-        image: SenderThree,
-        sender: 'Fahmi',
-        time: '19:00',
-        message: 'At home or not brother?',
-      },
-      {
-        id: 4,
-        image: SenderFour,
-        sender: 'Dio',
-        time: '18:00',
-        message: 'Tomorrow sunmori bro!!',
-      },
-      {
-        id: 5,
-        image: SenderFive,
-        sender: 'Reza',
-        time: '17:00',
-        message: 'Can you fix the laptop or not bro?',
-      },
-      {
-        id: 6,
-        image: SenderSix,
-        sender: 'Dwi',
-        time: '16:00',
-        message: 'Bro, can you help me with college assignments or not?',
-      },
-      {
-        id: 7,
-        image: SenderSeven,
-        sender: 'Lathif',
-        time: '15:00',
-        message: 'Bro tomorrow futsall!!',
-      },
-    ],
-    contact: [
-      {
-        id: 1,
-        image: SenderOne,
-        sender: 'Tasya Salsaliantika',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 2,
-        image: SenderTwo,
-        sender: 'Ule',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 3,
-        image: SenderThree,
-        sender: 'Fahmi',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 4,
-        image: SenderFour,
-        sender: 'Dio',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 5,
-        image: SenderFive,
-        sender: 'Reza',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 6,
-        image: SenderSix,
-        sender: 'Dwi',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 7,
-        image: SenderSeven,
-        sender: 'Lathif',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 8,
-        image: SenderSix,
-        sender: 'Dwi',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 9,
-        image: SenderSeven,
-        sender: 'Lathif',
-        phone: '+62 899 7212 282',
-      },
-      {
-        id: 10,
-        image: SenderSeven,
-        sender: 'Lathif',
-        phone: '+62 899 7212 282',
-      },
-    ],
     modalVisible: false,
+    message: '',
+    loading: false,
+    listRefresh: false,
+    contact: [],
+    pageContact: 1,
+    searchMessage: '',
   };
   setModalVisible = async (visible) => {
     await this.props.getContact(this.props.auth.token);
-    this.setState({modalVisible: visible});
+    this.setState({modalVisible: visible, contact: this.props.contact.results});
   };
   async componentDidMount() {
     await this.props.listHistoryChat(this.props.auth.token);
@@ -157,6 +50,71 @@ class Chat extends Component {
     await this.props.historyChat(token, idSender);
     await this.props.sender(idSender);
     this.props.navigation.navigate('Chatting', {idSender, username, picture});
+  };
+  next = async () => {
+    if (
+      this.props.chat.pageInfoListHistoryChat.currentPage <
+      this.props.chat.pageInfoListHistoryChat.totalPage
+    ) {
+      const {searchMessage} = this.state;
+      await this.props.pagingListHistoryChat(
+        this.props.auth.token,
+        searchMessage,
+        this.props.chat.pageInfoListHistoryChat.currentPage + 1,
+        null,
+      );
+    }
+  };
+  search = async (value) => {
+    this.setState({loading: true, searchMessage: value});
+    await this.props.listHistoryChat(this.props.auth.token, value);
+    if (this.props.chat.listHistoryChat.length > 0) {
+      this.setState({
+        message: '',
+        loading: false,
+      });
+    } else {
+      this.setState({
+        message: `${value} Not Found`,
+        loading: false,
+      });
+    }
+  };
+  refresh = async () => {
+    this.setState({loading: true});
+    await this.props.listHistoryChat(this.props.auth.token);
+    if (this.props.chat.listHistoryChat.length > 0) {
+      this.setState({
+        loading: false,
+        message: '',
+        page: 1,
+      });
+    } else {
+      this.setState({
+        message: 'Chat Not Found',
+        loading: false,
+        page: 1,
+      });
+    }
+  };
+  searchContact = async (value) => {
+    this.setState({loading: true});
+    await this.props.getContact(this.props.auth.token, value);
+    if (this.props.contact.results.length > 0) {
+      this.setState({
+        message: '',
+        loading: false,
+        contact: this.props.contact.results,
+        pageContact: 1,
+      });
+    } else {
+      this.setState({
+        message: `${value} Not Found`,
+        loading: false,
+        contact: this.props.contact.results,
+        pageContact: 1,
+      });
+    }
   };
   render() {
     const {modalVisible} = this.state;
@@ -180,10 +138,11 @@ class Chat extends Component {
               style={styles.textInput}
               placeholder="Search for messages"
               placeholderTextColor="#8b8b8b"
+              onChangeText={(value) => this.search(value)}
             />
           </View>
         </View>
-        {this.props.chat.listHistoryChat.length > 0 && this.props.auth.token ? (
+        {this.props.auth.token && this.props.chat.listHistoryChat.length > 0 ? (
           <FlatList
             showsVerticalScrollIndicator={false}
             data={this.props.chat.listHistoryChat}
@@ -191,7 +150,9 @@ class Chat extends Component {
               <TouchableOpacity
                 onPress={() =>
                   this.chatting(
-                    item.idSender,
+                    auth.user.phoneNumber === item.senderPhoneNumber
+                      ? item.idReceiver
+                      : item.idSender,
                     auth.user.phoneNumber === item.senderPhoneNumber
                       ? item.receiverUsername
                       : item.senderUsername,
@@ -239,15 +200,30 @@ class Chat extends Component {
                             : moment(item.createdAt).format('hh:mm a')}
                         </Text>
                       </View>
-                      <Text style={styles.textChat}>{item.message}</Text>
+                      <View style={styles.rowMessage}>
+                        {auth.user.phoneNumber === item.senderPhoneNumber ? (
+                          <IcRead />
+                        ) : null}
+                        <Text style={styles.textChat}>
+                          {item.message.length > 30
+                            ? `${item.message.substring(0, 30)}.....`
+                            : item.message}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>
               </TouchableOpacity>
             )}
             keyExtractor={(item) => String(item.id)}
+            refreshing={this.state.listRefresh}
+            onRefresh={this.refresh}
+            onEndReached={this.next}
+            onEndReachedThreshold={0.5}
           />
-        ) : null}
+        ) : (
+          <Text style={styles.textMessage}>{this.state.message}</Text>
+        )}
         <Modal
           animationType="fade"
           transparent={true}
@@ -272,13 +248,14 @@ class Chat extends Component {
                   style={styles.textInput}
                   placeholder="Search"
                   placeholderTextColor="#8b8b8b"
+                  onChangeText={(value) => this.searchContact(value)}
                 />
               </View>
             </View>
-            {this.props.contact.results ? (
+            {this.state.contact.length > 0 ? (
               <FlatList
                 showsVerticalScrollIndicator={false}
-                data={this.props.contact.results}
+                data={this.state.contact}
                 renderItem={({item}) => (
                   <TouchableOpacity
                     onPress={() => {
@@ -290,9 +267,12 @@ class Chat extends Component {
                 )}
                 keyExtractor={(item) => String(item.id)}
               />
-            ) : null}
+            ) : (
+              <Text style={styles.textMessage}>{this.state.message}</Text>
+            )}
           </View>
         </Modal>
+        {this.state.loading && <LoadingIndicator />}
       </View>
     );
   }
@@ -304,7 +284,13 @@ const mapStateToProps = (state) => ({
   contact: state.contact,
 });
 
-const mapDispatchToProps = {listHistoryChat, historyChat, sender, getContact};
+const mapDispatchToProps = {
+  listHistoryChat,
+  historyChat,
+  sender,
+  getContact,
+  pagingListHistoryChat,
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(Chat);
 
@@ -325,6 +311,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins-Regular',
     color: '#ffffff',
+  },
+  textMessage: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginTop: 10,
   },
   backgroundInput: {
     backgroundColor: '#1c1c1c',
@@ -381,10 +374,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: '#8b8b8b',
   },
+  rowMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   textChat: {
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
     color: '#979799',
+    marginLeft: 2,
   },
   rowModal: {
     flexDirection: 'row',
