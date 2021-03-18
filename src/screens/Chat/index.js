@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {connect} from 'react-redux';
@@ -33,14 +34,26 @@ class Chat extends Component {
     modalVisible: false,
     message: '',
     loading: false,
+    loadingContact: false,
     listRefresh: false,
     contact: [],
     pageContact: 1,
     searchMessage: '',
+    searchContact: '',
   };
   setModalVisible = async (visible) => {
-    await this.props.getContact(this.props.auth.token);
-    this.setState({modalVisible: visible, contact: this.props.contact.results});
+    this.setState({loadingContact: true});
+    await this.props.getContact(
+      this.props.auth.token,
+      this.state.searchContact,
+      this.state.pageContact,
+      10,
+    );
+    this.setState({
+      modalVisible: visible,
+      contact: this.props.contact.results,
+      loadingContact: false,
+    });
   };
   async componentDidMount() {
     await this.props.listHistoryChat(this.props.auth.token);
@@ -63,6 +76,23 @@ class Chat extends Component {
         this.props.chat.pageInfoListHistoryChat.currentPage + 1,
         null,
       );
+    }
+  };
+  nextContact = async () => {
+    if (
+      this.props.contact.pageInfo.currentPage <
+      this.props.contact.pageInfo.totalPage
+    ) {
+      const {contact: oldContact, searchContact} = this.state;
+      await this.props.getContact(
+        this.props.auth.token,
+        searchContact,
+        this.props.contact.pageInfo.currentPage + 1,
+        10,
+      );
+      const nowContact = this.props.contact.results;
+      const newData = [...oldContact, ...nowContact];
+      this.setState({contact: newData});
     }
   };
   search = async (value) => {
@@ -98,19 +128,19 @@ class Chat extends Component {
     }
   };
   searchContact = async (value) => {
-    this.setState({loading: true});
+    this.setState({loadingContact: true, searchContact: value});
     await this.props.getContact(this.props.auth.token, value);
     if (this.props.contact.results.length > 0) {
       this.setState({
         message: '',
-        loading: false,
+        loadingContact: false,
         contact: this.props.contact.results,
         pageContact: 1,
       });
     } else {
       this.setState({
         message: `${value} Not Found`,
-        loading: false,
+        loadingContact: false,
         contact: this.props.contact.results,
         pageContact: 1,
       });
@@ -252,7 +282,9 @@ class Chat extends Component {
                 />
               </View>
             </View>
-            {this.state.contact.length > 0 ? (
+            {this.state.loadingContact ? (
+              <ActivityIndicator size="large" color="#ffffff" />
+            ) : this.state.contact.length > 0 ? (
               <FlatList
                 showsVerticalScrollIndicator={false}
                 data={this.state.contact}
@@ -266,10 +298,12 @@ class Chat extends Component {
                   </TouchableOpacity>
                 )}
                 keyExtractor={(item) => String(item.id)}
+                onEndReached={this.nextContact}
+                onEndReachedThreshold={0.5}
               />
-            ) : (
+            ) : this.state.message !== '' ? (
               <Text style={styles.textMessage}>{this.state.message}</Text>
-            )}
+            ) : null}
           </View>
         </Modal>
         {this.state.loading && <LoadingIndicator />}

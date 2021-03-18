@@ -28,7 +28,7 @@ class Contact extends Component {
     page: 1,
     contact: [],
     listRefresh: false,
-    searcContact: '',
+    searchContact: '',
   };
   chatting = async (idSender, username, picture) => {
     const {token} = this.props.auth;
@@ -41,7 +41,7 @@ class Contact extends Component {
     this.setState({contact: this.props.contact.results});
   }
   search = async (value) => {
-    this.setState({loading: true, searcContact: value});
+    this.setState({loading: true, searchContact: value});
     await this.props.getContact(this.props.auth.token, value);
     if (this.props.contact.results.length > 0) {
       this.setState({
@@ -144,10 +144,16 @@ class Contact extends Component {
   };
   next = async () => {
     if (this.state.page < this.props.contact.pageInfo.totalPage) {
-      const {contact: oldContact, page, sort, order, searcContact} = this.state;
+      const {
+        contact: oldContact,
+        page,
+        sort,
+        order,
+        searchContact,
+      } = this.state;
       await this.props.getContact(
         this.props.auth.token,
-        searcContact,
+        searchContact,
         page + 1,
         null,
         sort,

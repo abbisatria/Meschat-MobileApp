@@ -13,6 +13,7 @@ import {logout, updateProfile, deletePhoto} from '../../redux/actions/auth';
 import {showMessage} from '../../helpers/showMessage';
 import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
 import {REACT_APP_API_URL as API_URL} from '@env';
+import LoadingIndicator from '../../components/LoadingIndicator';
 
 import PhotoProfile from '../../assets/images/profile.jpg';
 import IcProfile from '../../assets/icons/ic-profile.svg';
@@ -23,6 +24,7 @@ import IcCamera from '../../assets/icons/ic-camera.svg';
 class Setting extends Component {
   state = {
     modalVisible: false,
+    loading: false,
   };
   setModalVisible = (visible) => {
     this.setState({modalVisible: visible});
@@ -32,17 +34,20 @@ class Setting extends Component {
     this.props.navigation.reset({index: 0, routes: [{name: 'SignIn'}]});
   };
   addPhotoCamera = () => {
-    this.setState({modalVisible: false});
+    this.setState({modalVisible: false, loading: true});
     launchCamera(
       {
         quality: 0.3,
       },
       async (response) => {
         if (response.didCancel) {
+          this.setState({loading: false});
           showMessage('User cancelled upload image');
         } else if (response.errorMessage) {
+          this.setState({loading: false});
           showMessage('Image Error: ', response.errorMessage);
         } else if (response.fileSize >= 1 * 1024 * 1024) {
+          this.setState({loading: false});
           showMessage('Image to large');
         } else {
           const dataImage = {
@@ -56,18 +61,22 @@ class Setting extends Component {
             {picture: dataImage},
           );
           showMessage(this.props.auth.message, 'success');
+          this.setState({loading: false});
         }
       },
     );
   };
   addPhotoGallery = () => {
-    this.setState({modalVisible: false});
+    this.setState({modalVisible: false, loading: true});
     launchImageLibrary({}, async (response) => {
       if (response.didCancel) {
+        this.setState({loading: false});
         showMessage('User cancelled upload image');
       } else if (response.errorMessage) {
+        this.setState({loading: false});
         showMessage('Image Error: ', response.errorMessage);
       } else if (response.fileSize >= 1 * 1024 * 1024) {
+        this.setState({loading: false});
         showMessage('Image to large');
       } else {
         const dataImage = {
@@ -81,17 +90,19 @@ class Setting extends Component {
           {picture: dataImage},
         );
         showMessage(this.props.auth.message, 'success');
+        this.setState({loading: false});
       }
     });
   };
   deletePhoto = async () => {
+    this.setState({loading: true});
     const {token, user} = this.props.auth;
     await this.props.deletePhoto(token, user.id);
     if (this.props.auth.errorMsg === '') {
-      this.setState({modalVisible: false});
+      this.setState({modalVisible: false, loading: false});
       showMessage(this.props.auth.message, 'success');
     } else {
-      this.setState({modalVisible: false});
+      this.setState({modalVisible: false, loading: false});
       showMessage(this.props.auth.errorMsg);
     }
   };
@@ -198,6 +209,7 @@ class Setting extends Component {
                 </View>
               </View>
             </Modal>
+            {this.state.loading && <LoadingIndicator />}
           </View>
         )}
       </>

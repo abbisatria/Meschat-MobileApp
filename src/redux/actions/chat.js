@@ -65,7 +65,7 @@ export const pagingListHistoryChat = (
   };
 };
 
-export const historyChat = (token, idReceiver) => {
+export const historyChat = (token, idReceiver, page) => {
   return async (dispatch) => {
     const params = new URLSearchParams();
     params.append('idReceiver', idReceiver);
@@ -74,9 +74,40 @@ export const historyChat = (token, idReceiver) => {
         type: 'SET_CHAT_MESSAGE',
         payload: '',
       });
-      const response = await http(token).post('chat/history', params);
+      const response = await http(token).post(
+        `chat/history?page=${page ? page : 1}`,
+        params,
+      );
       dispatch({
         type: 'HISTORY_CHAT',
+        payload: response.data.results,
+        pageInfo: response.data.pageInfo,
+      });
+    } catch (err) {
+      const {message} = err.response.data;
+      dispatch({
+        type: 'SET_CHAT_MESSAGE',
+        payload: message,
+      });
+    }
+  };
+};
+
+export const pagingHistoryChat = (token, idReceiver, page) => {
+  return async (dispatch) => {
+    const params = new URLSearchParams();
+    params.append('idReceiver', idReceiver);
+    try {
+      dispatch({
+        type: 'SET_CHAT_MESSAGE',
+        payload: '',
+      });
+      const response = await http(token).post(
+        `chat/history?page=${page ? page : 1}`,
+        params,
+      );
+      dispatch({
+        type: 'PAGING_HISTORY_CHAT',
         payload: response.data.results,
         pageInfo: response.data.pageInfo,
       });

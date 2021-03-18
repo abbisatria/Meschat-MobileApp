@@ -33,6 +33,15 @@ const chatReducer = (state = initialState, action) => {
         pageInfoHistoryChat: action.pageInfo,
       };
     }
+    case 'PAGING_HISTORY_CHAT': {
+      const oldData = state.historyChat;
+      const newData = [...oldData, ...action.payload];
+      return {
+        ...state,
+        historyChat: newData,
+        pageInfoHistoryChat: action.pageInfo,
+      };
+    }
     case 'SEND_CHAT': {
       return {
         ...state,

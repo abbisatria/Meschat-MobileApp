@@ -10,10 +10,14 @@ import {
 } from 'react-native';
 import ChatItem from '../../components/ChatItem';
 import {connect} from 'react-redux';
-import {sendChat, historyChat, listHistoryChat} from '../../redux/actions/chat';
+import {
+  sendChat,
+  historyChat,
+  listHistoryChat,
+  pagingHistoryChat,
+} from '../../redux/actions/chat';
 import {REACT_APP_API_URL as API_URL} from '@env';
 import moment from 'moment';
-import io from '../../helpers/socket';
 
 import Arrow from '../../assets/icons/Arrow.svg';
 import Send from '../../assets/icons/ic-send.svg';
@@ -34,6 +38,18 @@ class Chatting extends Component {
     this.setState({sendMessage: ''});
     await this.props.historyChat(token, this.props.route.params.idSender);
     await this.props.listHistoryChat(token);
+  };
+  next = async () => {
+    if (
+      this.props.chat.pageInfoHistoryChat.currentPage <
+      this.props.chat.pageInfoHistoryChat.totalPage
+    ) {
+      await this.props.pagingHistoryChat(
+        this.props.auth.token,
+        this.props.route.params.idSender,
+        this.props.chat.pageInfoHistoryChat.currentPage + 1,
+      );
+    }
   };
   render() {
     const date = new Date();
@@ -77,6 +93,8 @@ class Chatting extends Component {
                 />
               )}
               keyExtractor={(item) => String(item.id)}
+              onEndReached={this.next}
+              onEndReachedThreshold={0.5}
             />
           ) : null}
         </View>
@@ -107,7 +125,12 @@ const mapStateToProps = (state) => ({
   chat: state.chat,
 });
 
-const mapDispatchToProps = {sendChat, historyChat, listHistoryChat};
+const mapDispatchToProps = {
+  sendChat,
+  historyChat,
+  listHistoryChat,
+  pagingHistoryChat,
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(Chatting);
 
